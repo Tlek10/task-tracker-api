@@ -1,5 +1,6 @@
 package com.example.task_tracker_api.api.controllers;
 
+import com.example.task_tracker_api.api.controllers.helpers.ControllerHelper;
 import com.example.task_tracker_api.api.dto.AckDto;
 import com.example.task_tracker_api.api.dto.ProjectDto;
 import com.example.task_tracker_api.api.exceptions.BadRequestException;
@@ -23,7 +24,7 @@ import java.util.stream.Stream;
 public class ProjectController {
     private final ProjectRepository projectRepository;
     private final ProjectDtoFactory projectDtoFactory;
-
+    private final ControllerHelper controllerHelper;
     public static final String FETCH_PROJECT = "api/projects";
     public static final String CREATE_OR_UPDATE_PROJECT = "api/projects";
     public static final String DELETE_PROJECT = "api/projects/{project_id}";
@@ -36,7 +37,7 @@ public class ProjectController {
 
         Stream<ProjectEntity> projectStream = optionalPrefixName
                 .map(projectRepository::streamAllByNameStartsWithIgnoreCase)
-                .orElseGet(projectRepository::streamAll);
+                .orElseGet(projectRepository::streamAllBy);
 
         return projectStream
                 .map(projectDtoFactory::makeProjectDto)
@@ -58,7 +59,7 @@ public class ProjectController {
         }
 
         final ProjectEntity project = optionalProjectId
-                .map(this::getProjectOrThrowException)
+                .map(controllerHelper::getProjectOrThrowException)
                 .orElseGet(() -> ProjectEntity.builder().build());
 
         optionalProjectName.ifPresent(projectName -> {
@@ -81,21 +82,9 @@ public class ProjectController {
     @DeleteMapping(DELETE_PROJECT)
     public AckDto deleteProject(
             @PathVariable(name = "project_id") Long projectId){
-        getProjectOrThrowException(projectId);
+        controllerHelper.getProjectOrThrowException(projectId);
         projectRepository.deleteById(projectId);
 
         return AckDto.makeDefault(true);
-    }
-
-    private ProjectEntity getProjectOrThrowException(Long projectId) {
-        return projectRepository
-                .findById(projectId)
-                .orElseThrow(() ->
-                        new NotFoundException(
-                                String.format(
-                                        "Project with \"%s\" doesn't exist", projectId
-                                )
-                        )
-                );
     }
 }

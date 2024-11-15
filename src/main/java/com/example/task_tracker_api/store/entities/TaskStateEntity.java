@@ -19,7 +19,6 @@ public class TaskStateEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long id;
-    @Column(unique = true)
     private String name;
 
     private Long ordinal;
